@@ -1,0 +1,2 @@
+providers:
+  - Richness\RichPayments\RichPaymentsServiceProvider
