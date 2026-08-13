@@ -17,6 +17,7 @@ return [
     'default_gateway' => 'paymob',
     'response_redirect_route' => null,
     'response_redirect_parameter' => 'order',
+    'response_verified_reference_session_key' => null,
 
     'views' => [
         'site_name' => env('RICHPAYMENTS_VIEWS_SITE_NAME'),

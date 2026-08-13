@@ -50,7 +50,7 @@ final class WebhookController extends Controller
         $this->markProcessed($event, $result);
 
         if ($result->verified) {
-            $redirect = $this->verifiedResponseRedirect($result);
+            $redirect = $this->verifiedResponseRedirect($request, $result);
 
             if ($redirect instanceof RedirectResponse) {
                 return $redirect;
@@ -62,12 +62,20 @@ final class WebhookController extends Controller
         return redirect()->route('rich-payments.pending');
     }
 
-    private function verifiedResponseRedirect(WebhookResult $result): ?RedirectResponse
+    private function verifiedResponseRedirect(Request $request, WebhookResult $result): ?RedirectResponse
     {
         $route = config('rich-payments.response_redirect_route');
 
         if (! is_string($route) || $route === '' || ! is_string($result->merchantReference) || $result->merchantReference === '') {
             return null;
+        }
+
+        $sessionKey = config('rich-payments.response_verified_reference_session_key');
+
+        if (is_string($sessionKey) && $sessionKey !== '') {
+            $references = (array) $request->session()->get($sessionKey, []);
+            $references[] = $result->merchantReference;
+            $request->session()->put($sessionKey, array_values(array_unique($references)));
         }
 
         $parameter = config('rich-payments.response_redirect_parameter', 'order');
