@@ -139,7 +139,7 @@ final class GatewayController extends Controller
 
         $fees = $this->feesConfig($methodData);
 
-        if ($fees !== [] && $fees !== ($method->fees_config ?? [])) {
+        if ($fees !== ($method->fees_config ?? [])) {
             $payload['fees_config'] = $fees;
             $changes['fees_changed'] = true;
         }

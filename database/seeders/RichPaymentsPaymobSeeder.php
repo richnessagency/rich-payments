@@ -28,10 +28,10 @@ final class RichPaymentsPaymobSeeder extends Seeder
         );
 
         foreach ([
-            'cards' => ['ar' => 'بطاقات بنكية', 'en' => 'Cards', 'sort' => 10],
-            'wallets' => ['ar' => 'محافظ إلكترونية', 'en' => 'Mobile Wallets', 'sort' => 20],
-            'kiosk' => ['ar' => 'دفع كاش عبر كشك', 'en' => 'Kiosk', 'sort' => 30],
-            'bnpl' => ['ar' => 'تقسيط / ادفع لاحقاً', 'en' => 'BNPL', 'sort' => 40],
+            'cards' => ['ar' => 'بطاقات بنكية', 'en' => 'Cards', 'sort' => 10, 'fees' => ['percent' => '2.75', 'fixed_minor' => 300]],
+            'wallets' => ['ar' => 'محافظ إلكترونية', 'en' => 'Mobile Wallets', 'sort' => 20, 'fees' => ['percent' => '2.75', 'fixed_minor' => 300]],
+            'kiosk' => ['ar' => 'دفع كاش عبر كشك', 'en' => 'Kiosk', 'sort' => 30, 'fees' => ['percent' => '2.75', 'fixed_minor' => 300]],
+            'bnpl' => ['ar' => 'تقسيط / ادفع لاحقاً', 'en' => 'BNPL', 'sort' => 40, 'fees' => ['percent' => '2.75', 'fixed_minor' => 300]],
         ] as $code => $method) {
             $gateway->methods()->updateOrCreate(
                 ['code' => $code],
@@ -40,6 +40,7 @@ final class RichPaymentsPaymobSeeder extends Seeder
                     'display_name_en' => $method['en'],
                     'active' => false,
                     'sort_order' => $method['sort'],
+                    'fees_config' => $method['fees'],
                 ],
             );
         }
