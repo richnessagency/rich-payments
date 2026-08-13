@@ -69,7 +69,7 @@ final class PaymobGateway implements ManagesTransactions, PaymentGatewayDriver, 
             gatewayCode: $gateway->code,
             status: PaymentStatus::Redirected->value,
             externalReference: $externalReference,
-            checkoutUrl: $clientSecret && $publicKey ? $this->checkoutUrl($gateway, (string) $clientSecret) : null,
+            checkoutUrl: $clientSecret ? $this->checkoutUrl($gateway, (string) $clientSecret) : null,
             payload: is_array($response) ? $response : [],
         );
     }
