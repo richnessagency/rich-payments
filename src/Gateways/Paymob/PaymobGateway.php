@@ -19,6 +19,7 @@ use Richness\RichPayments\Data\WebhookResult;
 use Richness\RichPayments\Enums\PaymentStatus;
 use Richness\RichPayments\Models\PaymentGateway;
 use Richness\RichPayments\Security\CredentialVault;
+use RuntimeException;
 use Throwable;
 
 final class PaymobGateway implements ManagesTransactions, PaymentGatewayDriver, SupportsConnectionTest
@@ -36,6 +37,10 @@ final class PaymobGateway implements ManagesTransactions, PaymentGatewayDriver, 
         $baseUrl = rtrim((string) config('rich-payments.gateways.paymob.base_url'), '/');
         $endpoint = $baseUrl.config('rich-payments.gateways.paymob.intention_endpoint');
         $integrationIds = $this->integrationIds($gateway, $request->methodCode);
+
+        if (! $secretKey || ! $publicKey || $integrationIds === []) {
+            throw new RuntimeException('Paymob credentials and at least one active integration ID are required.');
+        }
 
         $payload = [
             'amount' => $request->amountMinor,
