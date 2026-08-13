@@ -7,7 +7,7 @@ namespace Richness\RichPayments\Data;
 final readonly class PaymentRequest
 {
     /**
-     * @param  array<int, array{name: string, amount_minor: int, quantity?: int}>  $items
+     * @param  array<int, array{name: string, amount?: int, amount_minor?: int, quantity?: int}>  $items
      * @param  array<string, mixed>  $customer
      * @param  array<string, mixed>  $metadata
      */

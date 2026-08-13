@@ -46,7 +46,7 @@ final class PaymobGateway implements ManagesTransactions, PaymentGatewayDriver, 
             'amount' => $request->amountMinor,
             'currency' => $request->currency,
             'payment_methods' => $integrationIds,
-            'items' => $request->items,
+            'items' => $this->intentionItems($request),
             'billing_data' => $this->billingData($request),
             'special_reference' => $request->merchantReference,
             'notification_url' => $request->notificationUrl,
@@ -335,7 +335,7 @@ final class PaymobGateway implements ManagesTransactions, PaymentGatewayDriver, 
     }
 
     /**
-     * @return array<int, string>
+     * @return array<int, int|string>
      */
     private function integrationIds(PaymentGateway $gateway, ?string $methodCode): array
     {
@@ -346,8 +346,32 @@ final class PaymobGateway implements ManagesTransactions, PaymentGatewayDriver, 
             ->get();
 
         return $methods
-            ->map(fn ($method): ?string => $method->integration_identifier ? (string) $method->integration_identifier : null)
+            ->map(function ($method): int|string|null {
+                if (! $method->integration_identifier) {
+                    return null;
+                }
+
+                $identifier = (string) $method->integration_identifier;
+
+                return ctype_digit($identifier) ? (int) $identifier : $identifier;
+            })
             ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array{name: string, amount: int, quantity: int}>
+     */
+    private function intentionItems(PaymentRequest $request): array
+    {
+        return collect($request->items)
+            ->map(fn (array $item): array => [
+                'name' => $item['name'],
+                'amount' => (int) ($item['amount'] ?? $item['amount_minor'] ?? 0),
+                'quantity' => (int) ($item['quantity'] ?? 1),
+            ])
+            ->filter(fn (array $item): bool => $item['amount'] > 0)
             ->values()
             ->all();
     }
