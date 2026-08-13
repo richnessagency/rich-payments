@@ -50,10 +50,34 @@ final class WebhookController extends Controller
         $this->markProcessed($event, $result);
 
         if ($result->verified) {
+            $redirect = $this->verifiedResponseRedirect($result);
+
+            if ($redirect instanceof RedirectResponse) {
+                return $redirect;
+            }
+
             return redirect()->route($result->success ? 'rich-payments.success' : 'rich-payments.failed');
         }
 
         return redirect()->route('rich-payments.pending');
+    }
+
+    private function verifiedResponseRedirect(WebhookResult $result): ?RedirectResponse
+    {
+        $route = config('rich-payments.response_redirect_route');
+
+        if (! is_string($route) || $route === '' || ! is_string($result->merchantReference) || $result->merchantReference === '') {
+            return null;
+        }
+
+        $parameter = config('rich-payments.response_redirect_parameter', 'order');
+        $message = $result->success
+            ? 'تم تأكيد الدفع بنجاح.'
+            : 'عملية الدفع غير ناجحة. يمكنك المحاولة مرة أخرى من صفحة الطلب.';
+
+        return redirect()
+            ->route($route, [(string) $parameter => $result->merchantReference])
+            ->with('status', $message);
     }
 
     private function applyVerifiedTransaction(

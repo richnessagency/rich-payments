@@ -114,6 +114,14 @@ final class WebhookControllerTest extends TestCase
         Event::assertNotDispatched(WebhookRejected::class);
     }
 
+    public function test_pending_route_with_gateway_query_redirects_to_default_gateway_callback(): void
+    {
+        $query = $this->flattenedResponsePayload('ORDER-WH4');
+
+        $this->get(route('rich-payments.pending').'?'.http_build_query($query))
+            ->assertRedirect(route('rich-payments.response', ['gateway' => 'paymob']).'?'.http_build_query($query));
+    }
+
     /**
      * @return array{0: PaymentGateway, 1: PaymentAttempt}
      */

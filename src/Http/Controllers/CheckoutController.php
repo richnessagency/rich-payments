@@ -62,8 +62,14 @@ final class CheckoutController extends Controller
         return redirect()->away($session->checkoutUrl);
     }
 
-    public function pending(): View
+    public function pending(Request $request): RedirectResponse|View
     {
+        if ($request->query() !== []) {
+            return redirect()->to(route('rich-payments.response', [
+                'gateway' => (string) config('rich-payments.default_gateway', 'paymob'),
+            ]).'?'.http_build_query($request->query()));
+        }
+
         return view(RichPaymentsViews::RESULT_PENDING);
     }
 

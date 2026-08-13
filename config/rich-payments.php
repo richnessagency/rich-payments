@@ -15,6 +15,8 @@ return [
 
     'default_currency' => 'EGP',
     'default_gateway' => 'paymob',
+    'response_redirect_route' => null,
+    'response_redirect_parameter' => 'order',
 
     'views' => [
         'site_name' => env('RICHPAYMENTS_VIEWS_SITE_NAME'),
