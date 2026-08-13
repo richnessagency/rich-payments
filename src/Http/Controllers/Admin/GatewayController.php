@@ -128,8 +128,12 @@ final class GatewayController extends Controller
             'fees_changed' => false,
         ];
 
-        if (! empty($methodData['integration_identifier']) && $methodData['integration_identifier'] !== $method->integration_identifier) {
-            $payload['integration_identifier'] = $methodData['integration_identifier'];
+        $integrationIdentifier = isset($methodData['integration_identifier'])
+            ? trim((string) $methodData['integration_identifier'])
+            : '';
+
+        if ($integrationIdentifier !== '' && $integrationIdentifier !== $method->integration_identifier) {
+            $payload['integration_identifier'] = $integrationIdentifier;
             $changes['integration_rotated'] = true;
         }
 

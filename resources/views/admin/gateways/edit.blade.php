@@ -60,6 +60,12 @@
         <div class="rounded-2xl border border-slate-800 p-5 space-y-4">
             <h2 class="text-orange-400 font-extrabold">وسائل الدفع و Integration IDs</h2>
             @foreach($gateway->methods->sortBy('sort_order') as $method)
+                @php
+                    $integrationIdentifier = $method->integration_identifier;
+                    $integrationPreview = $integrationIdentifier
+                        ? str_repeat('•', 12).mb_substr((string) $integrationIdentifier, -4)
+                        : null;
+                @endphp
                 <div class="grid gap-4 md:grid-cols-3 rounded-xl bg-slate-950/50 border border-slate-800 p-4">
                     <label>
                         <span class="block text-xs font-bold text-slate-300 mb-2">العربي</span>
@@ -70,8 +76,13 @@
                         <input name="methods[{{ $method->code }}][display_name_en]" value="{{ old('methods.'.$method->code.'.display_name_en', $method->display_name_en) }}" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white">
                     </label>
                     <label>
-                        <span class="block text-xs font-bold text-slate-300 mb-2">Integration ID</span>
-                        <input name="methods[{{ $method->code }}][integration_identifier]" type="password" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white" placeholder="اتركه فارغاً للإبقاء عليه">
+                        <span class="block text-xs font-bold text-slate-300 mb-2">
+                            Integration ID
+                            @if($integrationPreview)
+                                <span class="text-slate-500">({{ $integrationPreview }})</span>
+                            @endif
+                        </span>
+                        <input name="methods[{{ $method->code }}][integration_identifier]" type="password" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white" placeholder="{{ $integrationPreview ? 'محفوظ - اتركه فارغاً للإبقاء عليه' : 'أدخل Integration ID' }}">
                     </label>
                     <label>
                         <span class="block text-xs font-bold text-slate-300 mb-2">رسوم خدمة %</span>
