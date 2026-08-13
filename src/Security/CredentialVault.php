@@ -56,6 +56,6 @@ final class CredentialVault
     {
         $tail = mb_substr($value, -4);
 
-        return str_repeat('•', max(8, mb_strlen($value) - 4)).$tail;
+        return str_repeat('•', 12).$tail;
     }
 }

@@ -41,6 +41,23 @@ final class CredentialVaultTest extends TestCase
         $this->assertDatabaseHas('rich_payment_audit_logs', ['action' => 'credential.rotated']);
     }
 
+    public function test_it_keeps_masked_preview_short_for_long_credentials(): void
+    {
+        $this->artisan('db:seed', ['--class' => RichPaymentsPaymobSeeder::class])->assertExitCode(0);
+
+        $gateway = PaymentGateway::query()->where('code', 'paymob')->firstOrFail();
+        $vault = $this->app->make(CredentialVault::class);
+        $longValue = str_repeat('pk_live_long_secret_', 40).'TAIL';
+
+        $vault->put($gateway, 'test', 'api_key', $longValue);
+
+        $credential = PaymentCredential::query()->where('key_name', 'api_key')->firstOrFail();
+
+        $this->assertLessThanOrEqual(191, mb_strlen((string) $credential->masked_preview));
+        $this->assertSame('••••••••••••TAIL', $credential->masked_preview);
+        $this->assertSame($longValue, $vault->get($gateway, 'api_key'));
+    }
+
     public function test_it_returns_null_for_missing_credential(): void
     {
         $this->artisan('db:seed', ['--class' => RichPaymentsPaymobSeeder::class])->assertExitCode(0);
