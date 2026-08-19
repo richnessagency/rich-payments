@@ -6,16 +6,79 @@
 @endphp
 <!doctype html>
 <html lang="{{ app()->getLocale() }}" dir="{{ $rtl ? 'rtl' : 'ltr' }}">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ $rtl ? 'الدفع قيد التأكيد' : 'Payment pending' }} · {{ $siteName }}</title></head>
-<body style="margin:0;font-family:Tahoma,Arial,sans-serif;background:#fff7ed;color:#111827">
-<main style="width:min(640px,calc(100% - 32px));margin:48px auto;background:white;border:1px solid #fed7aa;border-radius:18px;padding:28px;text-align:center">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ $rtl ? 'جاري تأكيد الدفع' : 'Confirming Payment' }} · {{ $siteName }}</title>
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #fed7aa;
+            border-top: 5px solid #f97316;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        .btn-primary {
+            display: inline-block;
+            background-color: #f97316;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            margin: 8px;
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #ea580c;
+        }
+        .btn-secondary {
+            display: inline-block;
+            background-color: #f3f4f6;
+            color: #4b5563;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            margin: 8px;
+            transition: background-color 0.2s;
+        }
+        .btn-secondary:hover {
+            background-color: #e5e7eb;
+        }
+    </style>
+</head>
+<body style="margin:0;font-family:Segoe UI,Tahoma,Arial,sans-serif;background:#fff7ed;color:#111827;display:flex;align-items:center;justify-content:center;min-height:100vh">
+<main style="width:min(540px,calc(100% - 32px));background:white;border:1px solid #fed7aa;border-radius:18px;padding:40px 28px;text-align:center;box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05)">
     @if($logoUrl)
-        <img src="{{ $logoUrl }}" alt="{{ $siteName }}" style="height:40px;width:auto;margin-bottom:14px">
+        <img src="{{ $logoUrl }}" alt="{{ $siteName }}" style="height:50px;width:auto;margin-bottom:24px">
     @endif
-    <h1 style="margin-top:0">{{ $rtl ? 'الدفع قيد التأكيد' : 'Payment is pending confirmation' }}</h1>
-    <p style="color:#7c2d12">{{ $rtl ? 'ننتظر تأكيد بوابة الدفع. لا تعتبر العملية ناجحة إلا بعد وصول Webhook موثق.' : 'Waiting for gateway confirmation. The payment is only successful once a verified webhook arrives.' }}</p>
+    
+    <div class="spinner"></div>
+    
+    <h1 style="margin-top:0;font-size:24px;margin-bottom:12px">{{ $rtl ? 'جاري تأكيد عملية الدفع' : 'Confirming your payment' }}</h1>
+    
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin-bottom:28px">
+        {{ $rtl ? 'نحن بانتظار تأكيد بوابة الدفع الإلكتروني حالياً. سيتم تحديث حالة طلبك وتأكيده تلقائياً خلال لحظات بمجرد إتمام الدفع. يرجى عدم إغلاق هذه الصفحة.' : 'We are currently waiting for confirmation from the payment gateway. Your order will be confirmed automatically in a few moments once the payment is completed. Please do not close this page.' }}
+    </p>
+
+    <div style="margin-top:20px">
+        <a href="{{ route('orders.lookup') }}" class="btn-primary">
+            {{ $rtl ? 'الذهاب لمتابعة الطلب' : 'Track Order Status' }}
+        </a>
+        <a href="/" class="btn-secondary">
+            {{ $rtl ? 'العودة للرئيسية' : 'Return to Homepage' }}
+        </a>
+    </div>
+
     @if($showPoweredBy)
-        <p style="margin-top:28px;color:#9ca3af;font-size:12px">Powered by RichPayments</p>
+        <p style="margin-top:36px;color:#9ca3af;font-size:12px;margin-bottom:0">Powered by RichPayments</p>
     @endif
 </main>
 </body>
