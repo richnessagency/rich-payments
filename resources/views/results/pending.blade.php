@@ -97,11 +97,11 @@
                 .catch(error => console.error('Error checking payment status:', error));
         };
 
-        // Poll every 2 seconds
-        const intervalId = setInterval(checkStatus, 2000);
+        // Poll every 3 seconds
+        const intervalId = setInterval(checkStatus, 3000);
         
-        // Initial check
-        checkStatus();
+        // Initial check after 3 seconds
+        setTimeout(checkStatus, 3000);
     });
 </script>
 </body>

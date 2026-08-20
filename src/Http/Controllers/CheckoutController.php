@@ -80,7 +80,12 @@ final class CheckoutController extends Controller
         ]);
     }
 
-    public function status(Request $request, string $reference): JsonResponse
+    public function status(
+        Request $request,
+        string $reference,
+        \Richness\RichPayments\Gateways\GatewayManager $manager,
+        ApplyPaymentResult $applyPaymentResult,
+    ): JsonResponse
     {
         $attempt = PaymentAttempt::query()
             ->where('merchant_reference', $reference)
@@ -89,6 +94,27 @@ final class CheckoutController extends Controller
 
         if (! $attempt) {
             return response()->json(['status' => 'not_found'], 404);
+        }
+
+        if ($attempt->status !== PaymentStatus::Paid && $attempt->status !== PaymentStatus::Failed) {
+            $transactionId = $attempt->transactions()->latest()->value('external_transaction_id')
+                ?? $attempt->external_reference;
+
+            if ($transactionId) {
+                try {
+                    $gateway = PaymentGateway::query()->where('code', $attempt->gateway_code)->first();
+                    if ($gateway) {
+                        $result = $manager->driver($gateway)->inquire($gateway, (string) $transactionId);
+                        $applyPaymentResult->fromInquiry($gateway, $result);
+                        $attempt->refresh();
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('Payment inquiry failed during status check', [
+                        'reference' => $reference,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
         }
 
         $status = $attempt->status;
