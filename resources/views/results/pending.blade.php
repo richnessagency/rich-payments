@@ -88,7 +88,12 @@
 
         const checkStatus = () => {
             fetch("/{{ config('rich-payments.route_prefix', 'payments') }}/status/" + encodeURIComponent(reference))
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('HTTP status ' + response.status);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.redirect_url) {
                         window.location.href = data.redirect_url;
