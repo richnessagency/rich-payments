@@ -64,13 +64,17 @@ final class CheckoutController extends Controller
 
     public function pending(Request $request): RedirectResponse|View
     {
-        if ($request->query() !== []) {
+        if ($request->query() !== [] && ! $request->has('reference')) {
             return redirect()->to(route('rich-payments.response', [
                 'gateway' => (string) config('rich-payments.default_gateway', 'paymob'),
             ]).'?'.http_build_query($request->query()));
         }
 
-        return view(RichPaymentsViews::RESULT_PENDING);
+        $reference = $request->query('reference');
+
+        return view(RichPaymentsViews::RESULT_PENDING, [
+            'reference' => $reference,
+        ]);
     }
 
     public function success(): View

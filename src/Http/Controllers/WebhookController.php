@@ -59,7 +59,7 @@ final class WebhookController extends Controller
             return redirect()->route($result->success ? 'rich-payments.success' : 'rich-payments.failed');
         }
 
-        return redirect()->route('rich-payments.pending');
+        return redirect()->route('rich-payments.pending', ['reference' => $result->merchantReference]);
     }
 
     private function verifiedResponseRedirect(Request $request, WebhookResult $result): ?RedirectResponse
