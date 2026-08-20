@@ -11,6 +11,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\View\View;
 use Richness\RichPayments\Data\PaymentRequest;
 use Richness\RichPayments\Enums\PaymentStatus;
+use Richness\RichPayments\Actions\ApplyPaymentResult;
 use Richness\RichPayments\Models\PaymentAttempt;
 use Richness\RichPayments\Models\PaymentGateway;
 use Richness\RichPayments\Models\PaymentMethod;
