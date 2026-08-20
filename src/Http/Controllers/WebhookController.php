@@ -50,6 +50,10 @@ final class WebhookController extends Controller
         $this->markProcessed($event, $result);
 
         if ($result->verified) {
+            if ($result->status === \Richness\RichPayments\Enums\PaymentStatus::Pending->value) {
+                return redirect()->route('rich-payments.pending', ['reference' => $result->merchantReference]);
+            }
+
             $redirect = $this->verifiedResponseRedirect($request, $result);
 
             if ($redirect instanceof RedirectResponse) {

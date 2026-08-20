@@ -15,6 +15,7 @@ Route::prefix(config('rich-payments.route_prefix', 'payments'))
         Route::get('/methods', [CheckoutController::class, 'methods'])->name('rich-payments.methods');
         Route::post('/start', [CheckoutController::class, 'start'])->name('rich-payments.start');
         Route::get('/pending', [CheckoutController::class, 'pending'])->name('rich-payments.pending');
+        Route::get('/status/{reference}', [CheckoutController::class, 'status'])->name('rich-payments.status');
         Route::get('/success', [CheckoutController::class, 'success'])->name('rich-payments.success');
         Route::get('/failed', [CheckoutController::class, 'failed'])->name('rich-payments.failed');
     });

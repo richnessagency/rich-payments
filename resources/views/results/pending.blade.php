@@ -81,5 +81,28 @@
         <p style="margin-top:36px;color:#9ca3af;font-size:12px;margin-bottom:0">Powered by RichPayments</p>
     @endif
 </main>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const reference = "{{ $reference ?? '' }}";
+        if (!reference) return;
+
+        const checkStatus = () => {
+            fetch("{{ route('rich-payments.status', ['reference' => ':reference']) }}".replace(':reference', encodeURIComponent(reference)))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    }
+                })
+                .catch(error => console.error('Error checking payment status:', error));
+        };
+
+        // Poll every 2 seconds
+        const intervalId = setInterval(checkStatus, 2000);
+        
+        // Initial check
+        checkStatus();
+    });
+</script>
 </body>
 </html>

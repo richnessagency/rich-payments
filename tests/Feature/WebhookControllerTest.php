@@ -239,6 +239,28 @@ final class WebhookControllerTest extends TestCase
         return $payload;
     }
 
+    public function test_status_endpoint_returns_attempt_status_and_redirect_url(): void
+    {
+        [$gateway, $attempt] = $this->transactionWebhookState('ORDER-ST1');
+
+        $response = $this->get(route('rich-payments.status', ['reference' => 'ORDER-ST1']));
+        $response->assertOk()
+            ->assertJson([
+                'status' => 'initiated',
+                'redirect_url' => null,
+            ]);
+
+        // Mark attempt as paid
+        $attempt->update(['status' => PaymentStatus::Paid]);
+
+        $response = $this->get(route('rich-payments.status', ['reference' => 'ORDER-ST1']));
+        $response->assertOk()
+            ->assertJson([
+                'status' => 'paid',
+                'redirect_url' => route('rich-payments.success'),
+            ]);
+    }
+
     private function webhookUrl(): string
     {
         $hmac = hash_hmac('sha512', $this->transactionPayload('ORDER-WH1')[1], 'merchant-hmac-secret');

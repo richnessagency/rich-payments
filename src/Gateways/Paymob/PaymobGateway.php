@@ -101,6 +101,7 @@ final class PaymobGateway implements ManagesTransactions, PaymentGatewayDriver, 
         }
 
         $success = filter_var($object['success'] ?? false, FILTER_VALIDATE_BOOL);
+        $pending = filter_var($object['pending'] ?? false, FILTER_VALIDATE_BOOL);
         $merchantReference = $this->stringValue($object['special_reference'] ?? $object['merchant_order_id'] ?? $object['order']['merchant_order_id'] ?? null);
         $transactionId = $this->stringValue($object['id'] ?? null);
         $amount = $this->intValue($object['amount_cents'] ?? $object['amount'] ?? null);
@@ -109,7 +110,7 @@ final class PaymobGateway implements ManagesTransactions, PaymentGatewayDriver, 
         return new WebhookResult(
             verified: $verified,
             success: $success,
-            status: $success ? PaymentStatus::Paid->value : PaymentStatus::Failed->value,
+            status: $success ? PaymentStatus::Paid->value : ($pending ? PaymentStatus::Pending->value : PaymentStatus::Failed->value),
             merchantReference: $merchantReference,
             externalTransactionId: $transactionId,
             paidAmountMinor: $amount,

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Richness\RichPayments\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
 use Richness\RichPayments\Data\PaymentRequest;
+use Richness\RichPayments\Enums\PaymentStatus;
+use Richness\RichPayments\Models\PaymentAttempt;
 use Richness\RichPayments\Models\PaymentGateway;
 use Richness\RichPayments\Models\PaymentMethod;
 use Richness\RichPayments\RichPayments;
@@ -52,7 +55,7 @@ final class CheckoutController extends Controller
             methodCode: $method?->code,
             customer: $data['customer'] ?? [],
             notificationUrl: route('rich-payments.webhook', ['gateway' => $gateway->code]),
-            redirectionUrl: route('rich-payments.pending'),
+            redirectionUrl: route('rich-payments.response', ['gateway' => $gateway->code]),
         ));
 
         if (! $session->checkoutUrl) {
@@ -74,6 +77,48 @@ final class CheckoutController extends Controller
 
         return view(RichPaymentsViews::RESULT_PENDING, [
             'reference' => $reference,
+        ]);
+    }
+
+    public function status(Request $request, string $reference): JsonResponse
+    {
+        $attempt = PaymentAttempt::query()
+            ->where('merchant_reference', $reference)
+            ->latest()
+            ->first();
+
+        if (! $attempt) {
+            return response()->json(['status' => 'not_found'], 404);
+        }
+
+        $status = $attempt->status;
+        $redirectUrl = null;
+
+        if ($status === PaymentStatus::Paid || $status === PaymentStatus::Failed) {
+            $sessionKey = config('rich-payments.response_verified_reference_session_key');
+            if (is_string($sessionKey) && $sessionKey !== '') {
+                $references = (array) $request->session()->get($sessionKey, []);
+                $references[] = $reference;
+                $request->session()->put($sessionKey, array_values(array_unique($references)));
+            }
+
+            $route = config('rich-payments.response_redirect_route');
+            if (is_string($route) && $route !== '') {
+                $parameter = config('rich-payments.response_redirect_parameter', 'order');
+                $redirectUrl = route($route, [(string) $parameter => $reference]);
+
+                $message = $status === PaymentStatus::Paid
+                    ? 'تم تأكيد الدفع بنجاح.'
+                    : 'عملية الدفع غير ناجحة. يمكنك المحاولة مرة أخرى من صفحة الطلب.';
+                $request->session()->flash('status', $message);
+            } else {
+                $redirectUrl = route($status === PaymentStatus::Paid ? 'rich-payments.success' : 'rich-payments.failed');
+            }
+        }
+
+        return response()->json([
+            'status' => $status->value,
+            'redirect_url' => $redirectUrl,
         ]);
     }
 
