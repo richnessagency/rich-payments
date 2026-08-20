@@ -62,6 +62,44 @@ final class PaymobDriverTest extends TestCase
             ]);
     }
 
+    public function test_wallet_session_sends_local_egyptian_wallet_phone_number(): void
+    {
+        $this->artisan('db:seed', ['--class' => RichPaymentsPaymobSeeder::class])->assertExitCode(0);
+
+        $gateway = PaymentGateway::query()->where('code', 'paymob')->firstOrFail();
+        $gateway->methods()->where('code', 'wallets')->firstOrFail()->update([
+            'active' => true,
+            'integration_identifier' => '667788',
+        ]);
+
+        $vault = $this->app->make(CredentialVault::class);
+        $vault->put($gateway, 'test', 'secret_key', 'sk_test_secret');
+        $vault->put($gateway, 'test', 'public_key', 'pk_test_public');
+
+        Http::fake([
+            'https://accept.paymob.com/v1/intention/' => Http::response([
+                'id' => 'intention_wallet_1',
+                'client_secret' => 'csk_wallet_secret',
+            ], 201),
+        ]);
+
+        $driver = $this->app->make(GatewayManager::class)->driver($gateway);
+        $driver->createSession($gateway, new PaymentRequest(
+            amountMinor: 10000,
+            currency: 'EGP',
+            merchantReference: 'ORDER-PKG-WALLET',
+            methodCode: 'wallets',
+            items: [
+                ['name' => 'Meal', 'amount_minor' => 10000, 'quantity' => 1],
+            ],
+            customer: ['name' => 'Customer', 'phone' => '+201010101010'],
+        ));
+
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://accept.paymob.com/v1/intention/'
+            && $request['payment_methods'] === [667788]
+            && $request['billing_data']['phone_number'] === '01010101010');
+    }
+
     public function test_refund_marks_attempt_refunded(): void
     {
         $this->artisan('db:seed', ['--class' => RichPaymentsPaymobSeeder::class])->assertExitCode(0);

@@ -383,13 +383,43 @@ final class PaymobGateway implements ManagesTransactions, PaymentGatewayDriver, 
     private function billingData(PaymentRequest $request): array
     {
         $customer = $request->customer;
+        $phone = $this->billingPhone($request);
 
         return [
             'first_name' => (string) ($customer['first_name'] ?? $customer['name'] ?? 'Customer'),
             'last_name' => (string) ($customer['last_name'] ?? '.'),
             'email' => (string) ($customer['email'] ?? 'customer@example.com'),
-            'phone_number' => (string) ($customer['phone'] ?? $customer['phone_number'] ?? '01000000000'),
+            'phone_number' => $phone,
         ];
+    }
+
+    private function billingPhone(PaymentRequest $request): string
+    {
+        $phone = (string) ($request->customer['phone'] ?? $request->customer['phone_number'] ?? '');
+
+        if ($request->methodCode !== 'wallets') {
+            return $phone !== '' ? $phone : '01000000000';
+        }
+
+        $digits = preg_replace('/\D+/', '', $phone) ?: '';
+
+        if (str_starts_with($digits, '20') && strlen($digits) === 12) {
+            return '0'.substr($digits, 2);
+        }
+
+        if (str_starts_with($digits, '1') && strlen($digits) === 10) {
+            return '0'.$digits;
+        }
+
+        if (str_starts_with($digits, '01') && strlen($digits) === 11) {
+            return $digits;
+        }
+
+        if (strlen($digits) > 11 && str_starts_with(substr($digits, -10), '1')) {
+            return '0'.substr($digits, -10);
+        }
+
+        return '01000000000';
     }
 
     private function stringValue(mixed $value): ?string
