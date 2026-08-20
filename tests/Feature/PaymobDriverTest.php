@@ -16,6 +16,7 @@ use Richness\RichPayments\Models\PaymentAttempt;
 use Richness\RichPayments\Models\PaymentGateway;
 use Richness\RichPayments\Security\CredentialVault;
 use Richness\RichPayments\Tests\TestCase;
+use RuntimeException;
 
 final class PaymobDriverTest extends TestCase
 {
@@ -98,6 +99,49 @@ final class PaymobDriverTest extends TestCase
         Http::assertSent(fn ($request): bool => $request->url() === 'https://accept.paymob.com/v1/intention/'
             && $request['payment_methods'] === [667788]
             && $request['billing_data']['phone_number'] === '01010101010');
+    }
+
+    public function test_intention_failure_includes_safe_method_and_integration_context(): void
+    {
+        $this->artisan('db:seed', ['--class' => RichPaymentsPaymobSeeder::class])->assertExitCode(0);
+
+        $gateway = PaymentGateway::query()->where('code', 'paymob')->firstOrFail();
+        $gateway->methods()->where('code', 'wallets')->firstOrFail()->update([
+            'active' => true,
+            'integration_identifier' => '123456789',
+        ]);
+
+        $vault = $this->app->make(CredentialVault::class);
+        $vault->put($gateway, 'test', 'secret_key', 'sk_test_secret');
+        $vault->put($gateway, 'test', 'public_key', 'pk_test_public');
+
+        Http::fake([
+            'https://accept.paymob.com/v1/intention/' => Http::response([
+                'message' => 'Integration ID/Name does not exist in or not connected to the given Profile',
+            ], 400),
+        ]);
+
+        $driver = $this->app->make(GatewayManager::class)->driver($gateway);
+
+        try {
+            $driver->createSession($gateway, new PaymentRequest(
+                amountMinor: 10000,
+                currency: 'EGP',
+                merchantReference: 'ORDER-PKG-WALLET-FAIL',
+                methodCode: 'wallets',
+                items: [
+                    ['name' => 'Meal', 'amount_minor' => 10000, 'quantity' => 1],
+                ],
+                customer: ['name' => 'Customer', 'phone' => '01010101010'],
+            ));
+
+            $this->fail('Expected Paymob intention failure.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('method [wallets]', $exception->getMessage());
+            $this->assertStringContainsString('*****6789', $exception->getMessage());
+            $this->assertStringContainsString('Integration ID/Name does not exist', $exception->getMessage());
+            $this->assertStringNotContainsString('123456789', $exception->getMessage());
+        }
     }
 
     public function test_refund_marks_attempt_refunded(): void

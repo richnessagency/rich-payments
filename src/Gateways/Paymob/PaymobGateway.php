@@ -54,13 +54,20 @@ final class PaymobGateway implements ManagesTransactions, PaymentGatewayDriver, 
             'extras' => $request->metadata,
         ];
 
-        $response = $this->http
-            ->withHeaders(['Authorization' => "Token {$secretKey}"])
-            ->acceptJson()
-            ->asJson()
-            ->post($endpoint, array_filter($payload, static fn (mixed $value): bool => $value !== null && $value !== []))
-            ->throw()
-            ->json();
+        try {
+            $response = $this->http
+                ->withHeaders(['Authorization' => "Token {$secretKey}"])
+                ->acceptJson()
+                ->asJson()
+                ->post($endpoint, array_filter($payload, static fn (mixed $value): bool => $value !== null && $value !== []))
+                ->throw()
+                ->json();
+        } catch (RequestException $exception) {
+            throw new RuntimeException(
+                $this->intentionFailureMessage($exception, $request->methodCode, $integrationIds),
+                previous: $exception,
+            );
+        }
 
         $clientSecret = is_array($response) ? ($response['client_secret'] ?? null) : null;
         $externalReference = is_array($response) ? (string) ($response['id'] ?? $request->merchantReference) : $request->merchantReference;
@@ -420,6 +427,48 @@ final class PaymobGateway implements ManagesTransactions, PaymentGatewayDriver, 
         }
 
         return '01000000000';
+    }
+
+    /**
+     * @param  array<int, int|string>  $integrationIds
+     */
+    private function intentionFailureMessage(RequestException $exception, ?string $methodCode, array $integrationIds): string
+    {
+        $message = $this->responseMessage($exception) ?? $exception->getMessage();
+        $method = $methodCode ?: 'all-active-methods';
+        $ids = implode(', ', array_map(fn (int|string $id): string => $this->maskedValue((string) $id), $integrationIds));
+
+        return 'Paymob Intention API failed for method ['.$method.'] using Integration ID(s) ['.$ids.']: '
+            .$message
+            .'. Check that this payment method has its own Integration ID in the same Paymob environment as the saved Secret/Public keys.';
+    }
+
+    private function responseMessage(RequestException $exception): ?string
+    {
+        $response = $exception->response->json();
+
+        if (! is_array($response)) {
+            return null;
+        }
+
+        $message = $response['message'] ?? $response['detail'] ?? $response['error'] ?? null;
+
+        if (is_scalar($message)) {
+            return (string) $message;
+        }
+
+        return is_array($message) ? json_encode($message, JSON_UNESCAPED_UNICODE) : null;
+    }
+
+    private function maskedValue(string $value): string
+    {
+        $length = strlen($value);
+
+        if ($length <= 4) {
+            return str_repeat('*', $length);
+        }
+
+        return str_repeat('*', min(8, $length - 4)).substr($value, -4);
     }
 
     private function stringValue(mixed $value): ?string
