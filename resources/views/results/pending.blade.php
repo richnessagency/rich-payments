@@ -87,7 +87,7 @@
         if (!reference) return;
 
         const checkStatus = () => {
-            fetch("{{ route('rich-payments.status', ['reference' => ':reference']) }}".replace(':reference', encodeURIComponent(reference)))
+            fetch("/{{ config('rich-payments.route_prefix', 'payments') }}/status/" + encodeURIComponent(reference))
                 .then(response => response.json())
                 .then(data => {
                     if (data.redirect_url) {
